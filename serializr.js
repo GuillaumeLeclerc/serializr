@@ -453,7 +453,23 @@
         function deserializeObjectWithSchema(parentContext, schema, json, callback, customArgs) {
             if (json === null || json === undefined)
                 return void callback(null, null)
-            var context = new Context(parentContext, schema, json, callback, customArgs)
+            var finalCallback = function (error, result) {
+              if (error) {
+                if (typeof callback === 'function') {
+                  callback(error);
+                } else {
+                  throw error;
+                }
+              } else {
+                if(schema.postProcess) {
+                  schema.postProcess(result);
+                }
+                if (typeof callback === 'function') {
+                  callback(null, result);
+                }
+              }
+            }
+            var context = new Context(parentContext, schema, json, finalCallback, customArgs)
             var target = schema.factory(context)
             // todo async invariant
             invariant(!!target, "No object returned from factory")
